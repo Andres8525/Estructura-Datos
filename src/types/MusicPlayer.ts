@@ -1,10 +1,13 @@
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  file: string;
+}
+
 export class Node {
   constructor(
-    public song: {
-      title: string;
-      artist: string;
-      file: string;
-    },
+    public song: Song,
     public next: Node | null = null,
     public prev: Node | null = null
   ) {}
@@ -15,15 +18,23 @@ export class MusicList {
   tail: Node | null = null;
   current: Node | null = null;
 
-  addSong(song: { title: string; artist: string; file: string }): void {
-    const newNode = new Node(song);
+  addSong(song: Omit<Song, 'id'> & { id?: string }): void {
+    const songWithId: Song = {
+      id: song.id || Math.random().toString(36).substring(2, 9),
+      ...song
+    };
+    
+    const newNode = new Node(songWithId);
+    
     if (!this.head) {
       this.head = newNode;
       this.tail = newNode;
       this.current = newNode;
     } else {
       newNode.prev = this.tail;
-      this.tail!.next = newNode;
+      if (this.tail) {
+        this.tail.next = newNode;
+      }
       this.tail = newNode;
     }
   }
@@ -52,5 +63,50 @@ export class MusicList {
       current = current.next;
     }
     return songs;
+  }
+
+  removeSong(id: string): void {
+    let current = this.head;
+    
+    while (current) {
+      if (current.song.id === id) {
+        if (!current.prev && !current.next) {
+          this.head = null;
+          this.tail = null;
+          if (this.current === current) {
+            this.current = null;
+          }
+          return;
+        }
+        
+        if (!current.prev) {
+          this.head = current.next;
+          if (this.head) this.head.prev = null;
+          if (this.current === current) {
+            this.current = this.head;
+          }
+          return;
+        }
+        
+        if (!current.next) {
+          this.tail = current.prev;
+          if (this.tail) this.tail.next = null;
+          if (this.current === current) {
+            this.current = this.tail;
+          }
+          return;
+        }
+        
+        if (current.prev && current.next) {
+          current.prev.next = current.next;
+          current.next.prev = current.prev;
+          if (this.current === current) {
+            this.current = current.next;
+          }
+        }
+        return;
+      }
+      current = current.next;
+    }
   }
 }
